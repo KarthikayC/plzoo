@@ -25,6 +25,7 @@ and type_of ctx {Zoo.data=e; loc} =
 	  Not_found -> typing_error ~loc "unknown variable %s" x)
     | Int _ -> TInt
     | Bool _ -> TBool
+    | Division (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Times (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Plus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Minus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
