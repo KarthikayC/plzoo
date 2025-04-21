@@ -8,6 +8,7 @@ let rec compile {Zoo.data=e'; _} =
     | Syntax.Var x -> [IVar x]
     | Syntax.Int k -> [IInt k]
     | Syntax.Bool b -> [IBool b]
+    | Syntax.Division (e1, e2) -> (compile e1) @ (compile e2) @ [IDivi]
     | Syntax.Times (e1, e2) -> (compile e1) @ (compile e2) @ [IMult]
     | Syntax.Plus (e1, e2) -> (compile e1) @ (compile e2) @ [IAdd]
     | Syntax.Minus (e1, e2) -> (compile e1) @ (compile e2) @ [ISub]
