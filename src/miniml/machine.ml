@@ -43,6 +43,7 @@ type mvalue =
 *)
 
 and instr =
+  | IDivi                           (** division *)
   | IMult                           (** multiplication *)
   | IAdd                            (** addition *)
   | ISub                            (** subtraction *)
@@ -101,6 +102,11 @@ let pop_app = function
 (** Arithmetical operations take their arguments from a stack and put the
     result onto the stack. We use auxiliary functions that do this. *)
 
+(** Division *)
+let divi = function
+  | (MInt x) :: (MInt y) :: s -> MInt (y / x) :: s
+  | _ -> error "int and int expected in divi"
+
 (** Multiplication *)
 let mult = function
   | (MInt x) :: (MInt y) :: s -> MInt (y * x) :: s
@@ -133,6 +139,7 @@ let less = function
 let exec instr frms stck envs =
   match instr with
     (* Arithmetic *)
+    | IDivi  -> (frms, divi stck, envs)
     | IMult  -> (frms, mult stck, envs)
     | IAdd   -> (frms, add stck, envs)
     | ISub   -> (frms, sub stck, envs)
