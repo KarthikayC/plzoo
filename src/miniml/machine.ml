@@ -167,7 +167,6 @@ let exec instr frms stck envs =
 	     [] -> error "no environment to pop"
 	   | _ :: envs' -> (frms, stck, envs'))
 
-(** [run frm env] executes the frame [frm] in environment [env]. *)
 let run frm env =
   let rec loop = function
     | ([], [v], _) -> v
