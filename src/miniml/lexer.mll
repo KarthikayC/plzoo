@@ -31,6 +31,9 @@ rule token = parse
   | '/'             { DIVISION }
   | var             { VAR (Lexing.lexeme lexbuf) }
   | eof             { EOF }
+  | "raise"         { RAISE }
+  | "try"           { TRY }
+  | "with"          { WITH }
 
 {
 }

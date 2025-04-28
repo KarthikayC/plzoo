@@ -40,8 +40,16 @@ and type_of ctx {Zoo.data=e; loc} =
       TArrow (ty1, ty2)
     | Apply (e1, e2) ->
       begin match type_of ctx e1 with
-	  TArrow (ty1, ty2) -> check ctx ty1 e2 ; ty2
+	TArrow (ty1, ty2) -> check ctx ty1 e2 ; ty2
 	| ty ->
-	  typing_error ~loc
+	typing_error ~loc
             "this expression is used as a function but its type is %t" (Print.ty ty)
       end
+  | Raise -> TInt
+  | TryWith (e1, e2) ->
+      let t1 = type_of ctx e1 in
+      let t2 = type_of ctx e2 in
+      if t1 = t2 then t1
+      else typing_error ~loc
+        "The 'try' block has type %t but the 'with' block has type %t"
+        (Print.ty t1) (Print.ty t2)

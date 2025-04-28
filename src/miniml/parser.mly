@@ -20,6 +20,9 @@
 %token LET
 %token SEMISEMI
 %token EOF
+%token RAISE
+%token TRY
+%token WITH
 
 %start file
 %type <Syntax.command list> file
@@ -80,6 +83,10 @@ plain_expr:
     { If (e1, e2, e3) }
   | FUN x = VAR LPAREN f = VAR COLON t1 = ty RPAREN COLON t2 = ty IS e = expr
     { Fun (x, f, t1, t2, e) }
+  | RAISE
+    { Raise }
+  | TRY e1 = expr WITH e2 = expr
+    { TryWith (e1, e2) }
 
 app_expr: mark_position(plain_app_expr) { $1 }
 plain_app_expr:
