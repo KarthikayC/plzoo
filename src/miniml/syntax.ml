@@ -29,7 +29,7 @@ and expr' =
   | If of expr * expr * expr 		(* Conditional [if e1 then e2 else e3] *)
   | Fun of name * name * ty * ty * expr (* Function [fun f(x:s):t is e] *)
   | Apply of expr * expr 		(* Application [e1 e2] *)
-  | TryWith of expr * except * expr
+  | TryWith of expr * except *  expr
 
 (* Toplevel commands *)
 type command =

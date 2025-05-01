@@ -25,22 +25,30 @@
     would use de Bruijn indices but we want to keep things simple. *)
 type name = Syntax.name
 
-(* Machine values. *)
+(** Custom Exceptions*)
+exception DivisionByZero
+exception GenericException
 
+(* Exceptions *)
+type except =
+  | DivisionByZero
+  | GenericException
+
+(** Machine values. *)
 type mvalue =
   | MInt of int                        (** Integer *)
   | MBool of bool                      (** Boolean value *)
   | MClosure of name * frame * environ (** Closure *)
 
 (**
-  There are two kinds of machine instructions.
+    There are two kinds of machine instructions.
 
-  The first kind manipules tha stack of machine values. These are
-  arithmetical operations, integer comparison, variable lookup,
-  placing constants onto the stack, and closure formation.
+    The first kind manipules tha stack of machine values. These are
+    arithmetical operations, integer comparison, variable lookup,
+    placing constants onto the stack, and closure formation.
 
-  The second kind are the control instructions. These are branching
-  instruction, execution of a closure, and popping of an environment.
+    The second kind are the control instructions. These are branching
+    instruction, execution of a closure, and popping of an environment.
 *)
 
 and instr =
@@ -57,7 +65,7 @@ and instr =
   | IBranch of frame * frame        (** branch *)
   | ICall                           (** execute a closure *)
   | IPopEnv                         (** pop environment *)
-  | ITry of instr list * instr list
+  | ITry of frame * Syntax.except * frame
 
 (** A frame is a list (stack) of instructions *)
 and frame = instr list
@@ -106,10 +114,9 @@ let pop_app = function
 
 (** Division *)
 let divi = function
-  | (MInt _) :: (MInt 0) :: _ -> raise Division_by_zero
+  | (MInt 0) :: (MInt _) :: _ -> raise DivisionByZero
   | (MInt x) :: (MInt y) :: s -> MInt (y / x) :: s
   | _ -> error "int and int expected in divi"
-
 
 (** Multiplication *)
 let mult = function
@@ -140,58 +147,50 @@ let less = function
     given state [(frms, stck, envs)], where [frms] is a stack of frames,
     [stck] is a stack of machine values, and [envs] is a stack of
     environments. The return value is a new state. *)
-    let rec exec_block block frms stck envs =
-      match block with
-      | [] -> (frms, stck, envs)
-      | instr :: rest ->
-          let (frms', stck', envs') = exec instr frms stck envs in
-          exec_block rest frms' stck' envs'
-    
-    and exec instr frms stck envs =
-      match instr with
-      | IDivi  -> (frms, divi stck, envs)
-      | IMult  -> (frms, mult stck, envs)
-      | IAdd   -> (frms, add stck, envs)
-      | ISub   -> (frms, sub stck, envs)
-      | IEqual -> (frms, equal stck, envs)
-      | ILess  -> (frms, less stck, envs)
-      | IVar x  -> (frms, (lookup x envs) :: stck, envs)
-      | IInt k  -> (frms, (MInt k) :: stck, envs)
-      | IBool b -> (frms, (MBool b) :: stck, envs)
-      | IClosure (f, x, frm) ->
-          (match envs with
-          | env :: _ ->
-              let rec c = MClosure (x, frm, (f, c) :: env) in
-              (frms, c :: stck, envs)
-          | [] -> error "no environment for a closure")
-      | IBranch (f1, f2) ->
-          let (b, stck') = pop_bool stck in
-          ((if b then f1 else f2) :: frms, stck', envs)
-      | ICall ->
-          let (x, frm, env, v, stck') = pop_app stck in
-          (frm :: frms, stck', ((x,v) :: env) :: envs)
-      | IPopEnv ->
-          (match envs with
-          | [] -> error "no environment to pop"
-          | _ :: envs' -> (frms, stck, envs'))
-      | ITry (try_block, handler_block) ->
-          (* Execute try_block; if exception, execute handler_block *)
-          (try
-            exec_block try_block frms stck envs
-          with Machine_error _ ->
-            exec_block handler_block frms stck envs)
+let exec instr frms stck envs =
+  match instr with
+    (* Arithmetic *)
+    | IDivi  -> (frms, divi stck, envs)
+    | IMult  -> (frms, mult stck, envs)
+    | IAdd   -> (frms, add stck, envs)
+    | ISub   -> (frms, sub stck, envs)
+    | IEqual -> (frms, equal stck, envs)
+    | ILess  -> (frms, less stck, envs)
+    (* Pushing values onto stack *)
+    | IVar x  -> (frms, (lookup x envs) :: stck, envs)
+    | IInt k  -> (frms, (MInt k) :: stck, envs)
+    | IBool b -> (frms, (MBool b) :: stck, envs)
+    | IClosure (f, x, frm) ->
+  (match envs with
+        env :: _ ->
+          let rec c = MClosure (x, frm, (f,c) :: env) in
+      (frms, c :: stck, envs)
+      | [] -> error "no environment for a closure")
+    (* Control instructions *)
+    | IBranch (f1, f2) ->
+  let (b, stck') = pop_bool stck in
+    ((if b then f1 else f2) :: frms, stck', envs)
+    | ICall ->
+  let (x, frm, env, v, stck') = pop_app stck in
+    (frm :: frms, stck', ((x,v) :: env) :: envs)
+    | IPopEnv ->
+  (match envs with
+        [] -> error "no environment to pop"
+      | _ :: envs' -> (frms, stck, envs'))
+      | ITry (_,_,_) -> failwith "Internal error: ITry must be handled by run loop"
 
+(** [run frm env] executes the frame [frm] in environment [env]. *)
 let run frm env =
   let rec loop = function
     | ([], [v], _) -> v
-    | ((i::is) :: frms, stck, envs) ->
-      (try loop (exec i (is::frms) stck envs)
-      with Machine_error _ ->
-        match frms with
-        | (handler_block)::frms_rest ->
-            loop (handler_block::frms_rest, stck, envs)
-        | [] ->
-            raise (Machine_error "uncaught exception"))
+    | ((ITry (try_frame, exception_given, catch_frame)) :: is) :: frms, stck, envs ->
+        (* Handle exceptions when running try_frame *)
+        (try
+          loop (try_frame :: is :: frms, stck, envs)
+        with
+          | DivisionByZero -> 
+            if exception_given = DivisionByZero then loop (catch_frame :: is :: frms, stck, envs) else raise Division_by_zero)
+    | ((i::is) :: frms, stck, envs) -> loop (exec i (is::frms) stck envs)
     | ([] :: frms, stck, envs) -> loop (frms, stck, envs)
     | _ -> error "illegal end of program"
   in
