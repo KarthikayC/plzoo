@@ -9,6 +9,11 @@ type ty =
   | TBool             (* Booleans *)
   | TArrow of ty * ty (* Functions *)
 
+(* Exceptions *)
+type except =
+  | DivisionByZero
+  | GenericException
+
 (* Expressions *)
 type expr = expr' Zoo.located
 and expr' =
@@ -24,8 +29,7 @@ and expr' =
   | If of expr * expr * expr 		(* Conditional [if e1 then e2 else e3] *)
   | Fun of name * name * ty * ty * expr (* Function [fun f(x:s):t is e] *)
   | Apply of expr * expr 		(* Application [e1 e2] *)
-  | Raise
-  | TryWith of expr * expr
+  | TryWith of expr * except * expr
 
 (* Toplevel commands *)
 type command =

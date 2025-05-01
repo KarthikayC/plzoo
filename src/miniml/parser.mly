@@ -17,12 +17,14 @@
 %token FUN IS
 %token COLON
 %token LPAREN RPAREN
+%token LCURLY RCURLY
 %token LET
 %token SEMISEMI
 %token EOF
-%token RAISE
 %token TRY
 %token WITH
+%token DIVISIONBYZERO
+%token GENERIC
 
 %start file
 %type <Syntax.command list> file
@@ -83,10 +85,14 @@ plain_expr:
     { If (e1, e2, e3) }
   | FUN x = VAR LPAREN f = VAR COLON t1 = ty RPAREN COLON t2 = ty IS e = expr
     { Fun (x, f, t1, t2, e) }
-  | RAISE
-    { Raise }
-  | TRY e1 = expr WITH e2 = expr
-    { TryWith (e1, e2) }
+  | TRY LCURLY e1 = expr RCURLY WITH LCURLY e2 = exception_name TARROW e3 = expr RCURLY
+    { TryWith (e1, e2, e3) }
+
+exception_name:
+  | DIVISIONBYZERO
+    { DivisionByZero }
+  | GENERIC
+    { GenericException }
 
 app_expr: mark_position(plain_app_expr) { $1 }
 plain_app_expr:
@@ -107,6 +113,8 @@ plain_simple_expr:
     { Int n }
   | LPAREN e = plain_expr RPAREN	
     { e }    
+  | LCURLY e = plain_expr RCURLY
+    { e }
 
 ty:
   | TBOOL
@@ -117,10 +125,11 @@ ty:
     { TArrow (t1, t2) }
   | LPAREN t = ty RPAREN
     { t }
+  | LCURLY t = ty RCURLY
+    { t }
 
 mark_position(X):
   x = X
   { Zoo.locate ~loc:(Zoo.make_location $startpos $endpos) x }
 
 %%
-

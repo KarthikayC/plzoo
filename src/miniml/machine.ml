@@ -24,7 +24,7 @@
 (** The datatype of variable names. A more efficient implementation
     would use de Bruijn indices but we want to keep things simple. *)
 type name = Syntax.name
-exception Division_by_zero
+
 (* Machine values. *)
 
 type mvalue =
@@ -57,7 +57,6 @@ and instr =
   | IBranch of frame * frame        (** branch *)
   | ICall                           (** execute a closure *)
   | IPopEnv                         (** pop environment *)
-  | IRaise
   | ITry of instr list * instr list
 
 (** A frame is a list (stack) of instructions *)
@@ -175,8 +174,6 @@ let less = function
           (match envs with
           | [] -> error "no environment to pop"
           | _ :: envs' -> (frms, stck, envs'))
-      | IRaise ->
-          raise (Machine_error "exception raised")
       | ITry (try_block, handler_block) ->
           (* Execute try_block; if exception, execute handler_block *)
           (try

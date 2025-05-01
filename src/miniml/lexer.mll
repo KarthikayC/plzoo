@@ -25,15 +25,19 @@ rule token = parse
   | ':'             { COLON }
   | '('             { LPAREN }
   | ')'             { RPAREN }
+  | '{'             { LCURLY }
+  | '}'             { RCURLY }
   | '+'             { PLUS }
   | '-'             { MINUS }
   | '*'             { TIMES }
   | '/'             { DIVISION }
-  | var             { VAR (Lexing.lexeme lexbuf) }
-  | eof             { EOF }
-  | "raise"         { RAISE }
   | "try"           { TRY }
   | "with"          { WITH }
+  | "DivisionByZero" { DIVISIONBYZERO }
+  | "GenericException" { GENERIC }
+  | var             { VAR (Lexing.lexeme lexbuf) }
+  | eof             { EOF }
+
 
 {
 }

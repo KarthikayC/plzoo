@@ -45,11 +45,14 @@ and type_of ctx {Zoo.data=e; loc} =
 	typing_error ~loc
             "this expression is used as a function but its type is %t" (Print.ty ty)
       end
-  | Raise -> TInt
-  | TryWith (e1, e2) ->
-      let t1 = type_of ctx e1 in
-      let t2 = type_of ctx e2 in
-      if t1 = t2 then t1
-      else typing_error ~loc
-        "The 'try' block has type %t but the 'with' block has type %t"
-        (Print.ty t1) (Print.ty t2)
+  | TryWith (e1, exn, e2) ->
+    let t1 = type_of ctx e1 in
+    let t2 = type_of ctx e2 in
+    begin match exn with
+    | DivisionByZero | GenericException ->
+        if t1 = t2 then t1
+        else
+          typing_error ~loc
+            "The 'try' block has type %t but the 'with' block has type %t"
+            (Print.ty t1) (Print.ty t2)
+    end
