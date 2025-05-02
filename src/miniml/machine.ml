@@ -189,7 +189,15 @@ let run frm env =
           loop (try_frame :: is :: frms, stck, envs)
         with
           | DivisionByZero -> 
-            if exception_given = DivisionByZero then loop (catch_frame :: is :: frms, stck, envs) else raise Division_by_zero)
+            if exception_given = DivisionByZero then
+              loop (catch_frame :: is :: frms, stck, envs)
+            else 
+              raise Division_by_zero
+          | Machine_error error -> 
+            if exception_given = GenericException then
+              loop (catch_frame :: is :: frms, stck, envs)
+            else
+              raise (Machine_error error))
     | ((i::is) :: frms, stck, envs) -> loop (exec i (is::frms) stck envs)
     | ([] :: frms, stck, envs) -> loop (frms, stck, envs)
     | _ -> error "illegal end of program"
