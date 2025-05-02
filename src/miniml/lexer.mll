@@ -30,6 +30,7 @@ rule token = parse
   | '+'             { PLUS }
   | '-'             { MINUS }
   | '*'             { TIMES }
+  (** Added tokens for Division, Try, With, and Exceptions *)
   | '/'             { DIVISION }
   | "try"           { TRY }
   | "with"          { WITH }

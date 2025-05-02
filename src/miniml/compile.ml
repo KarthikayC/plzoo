@@ -8,6 +8,7 @@ let rec compile {Zoo.data=e'; _} =
     | Syntax.Var x -> [IVar x]
     | Syntax.Int k -> [IInt k]
     | Syntax.Bool b -> [IBool b]
+    (** Added IDivi *)
     | Syntax.Division (e1, e2) -> (compile e1) @ (compile e2) @ [IDivi]
     | Syntax.Times (e1, e2) -> (compile e1) @ (compile e2) @ [IMult]
     | Syntax.Plus (e1, e2) -> (compile e1) @ (compile e2) @ [IAdd]
@@ -17,6 +18,7 @@ let rec compile {Zoo.data=e'; _} =
     | Syntax.If (e1, e2, e3) -> (compile e1) @ [IBranch (compile e2, compile e3)]
     | Syntax.Fun (f, x, _, _, e) -> [IClosure (f, x, compile e @ [IPopEnv])]
     | Syntax.Apply (e1, e2) -> (compile e1) @ (compile e2) @ [ICall]
+    (** Added ITry *)
     | Syntax.TryWith (e1, e, e2) ->
       let try_code = compile e1 in
         let with_code = compile e2 in

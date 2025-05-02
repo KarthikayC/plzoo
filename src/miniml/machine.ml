@@ -114,6 +114,7 @@ let pop_app = function
 
 (** Division *)
 let divi = function
+  (** Divides normally unless denominator = 0, then, DivisionByZero exception is raised *)
   | (MInt 0) :: (MInt _) :: _ -> raise DivisionByZero
   | (MInt x) :: (MInt y) :: s -> MInt (y / x) :: s
   | _ -> error "int and int expected in divi"
@@ -177,23 +178,29 @@ let exec instr frms stck envs =
   (match envs with
         [] -> error "no environment to pop"
       | _ :: envs' -> (frms, stck, envs'))
-      | ITry (_,_,_) -> failwith "Internal error: ITry must be handled by run loop"
+      (** ITry does nothing in exec. All functionality is in run loop *)
+      | ITry (_,_,_) -> failwith "ITry is handled by run loop"
 
 (** [run frm env] executes the frame [frm] in environment [env]. *)
 let run frm env =
   let rec loop = function
     | ([], [v], _) -> v
+    (** Catches any ITry in frm *)
     | ((ITry (try_frame, exception_given, catch_frame)) :: is) :: frms, stck, envs ->
-        (* Handle exceptions when running try_frame *)
+        (** Handles exceptions in try_frame *)
         (try
           loop (try_frame :: is :: frms, stck, envs)
         with
+          (** Goes to DivisionByZero block if raised *)
           | DivisionByZero -> 
+            (** Check whether the exception provided in TryWith block matches the exception raised and proceed accordingly *)
             if exception_given = DivisionByZero then
               loop (catch_frame :: is :: frms, stck, envs)
             else 
               raise Division_by_zero
+          (** Goes the Machine_error block for all other exceptions *)
           | Machine_error error -> 
+            (** Check whether the exception provided in TryWith block matches the exception raised and proceed accordingly *)
             if exception_given = GenericException then
               loop (catch_frame :: is :: frms, stck, envs)
             else

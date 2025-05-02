@@ -75,6 +75,7 @@ plain_expr:
     { Minus (e1, e2) }
   | e1 = expr TIMES e2 = expr
     { Times (e1, e2) }
+  (** Added the parser for Division *)
   | e1 = expr DIVISION e2 = expr
     { Division (e1, e2) }
   | e1 = expr EQUAL e2 = expr
@@ -85,9 +86,11 @@ plain_expr:
     { If (e1, e2, e3) }
   | FUN x = VAR LPAREN f = VAR COLON t1 = ty RPAREN COLON t2 = ty IS e = expr
     { Fun (x, f, t1, t2, e) }
+  (** Added the parser for TryWith block *)
   | TRY LCURLY e1 = expr RCURLY WITH LCURLY e2 = exception_name TARROW e3 = expr RCURLY
     { TryWith (e1, e2, e3) }
 
+(** Custom exceptions *)
 exception_name:
   | DIVISIONBYZERO
     { DivisionByZero }
@@ -113,6 +116,7 @@ plain_simple_expr:
     { Int n }
   | LPAREN e = plain_expr RPAREN	
     { e }    
+  (** Added the parser for {} *)
   | LCURLY e = plain_expr RCURLY
     { e }
 
@@ -125,6 +129,7 @@ ty:
     { TArrow (t1, t2) }
   | LPAREN t = ty RPAREN
     { t }
+  (** Added the type for {} *)
   | LCURLY t = ty RCURLY
     { t }
 

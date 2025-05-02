@@ -9,7 +9,7 @@ type ty =
   | TBool             (* Booleans *)
   | TArrow of ty * ty (* Functions *)
 
-(* Exceptions *)
+(* Custom exceptions *)
 type except =
   | DivisionByZero
   | GenericException
@@ -29,7 +29,7 @@ and expr' =
   | If of expr * expr * expr 		(* Conditional [if e1 then e2 else e3] *)
   | Fun of name * name * ty * ty * expr (* Function [fun f(x:s):t is e] *)
   | Apply of expr * expr 		(* Application [e1 e2] *)
-  | TryWith of expr * except *  expr
+  | TryWith of expr * except * expr (* TryWith [e1 exn e2] *)
 
 (* Toplevel commands *)
 type command =
